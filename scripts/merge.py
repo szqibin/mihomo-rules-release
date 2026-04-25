@@ -12,20 +12,48 @@ def is_valid_ip_or_cidr(entry):
     # 判断是否为合法的 IP 或 CIDR 格式
     return any(char.isdigit() for char in entry) and ('.' in entry or ':' in entry)
 
+# def process_content(content, payload_type):
+#     merged = set()
+#     # 提取内容，兼容 YAML 列表和纯文本行
+#     entries = re.findall(r"(?:^-\s*|payload:\s*-\s*|^\s*)(['\"]?)([^'\"\s#]+)\1", content, re.MULTILINE)
+#     for _, e in entries:
+#         cleaned = clean_entry(e)
+#         if not cleaned or cleaned.startswith('#'): continue
+#         if payload_type == "ipcidr":
+#             if is_valid_ip_or_cidr(cleaned):
+#                 merged.add(cleaned)
+#         else:
+#             # 自动去掉 +. 前缀以提高编译兼容性
+#             # cleaned = cleaned.lstrip('+.')
+#             merged.add(cleaned)
+#     return merged
+
 def process_content(content, payload_type):
     merged = set()
-    # 提取内容，兼容 YAML 列表和纯文本行
-    entries = re.findall(r"(?:^-\s*|payload:\s*-\s*|^\s*)(['\"]?)([^'\"\s#]+)\1", content, re.MULTILINE)
+    
+    # 修复1：优化正则表达式
+    # ^\s* : 匹配行首可能存在的缩进空格
+    # (?:-\s+)?   : 匹配可能存在的 yaml 列表符 "- "（非捕获且设为可选）
+    # (['\"]?)    : 捕获可能存在的单双引号 (Group 1)
+    # ([^'\"\s#]+): 捕获实际的域名或 IP 内容 (Group 2)，遇到引号、空格、#号则停止
+    # \1          : 匹配闭合的引号
+    entries = re.findall(r"^\s*(?:-\s+)?(['\"]?)([^'\"\s#]+)\1", content, re.MULTILINE)
+    
     for _, e in entries:
         cleaned = clean_entry(e)
-        if not cleaned or cleaned.startswith('#'): continue
+        
+        # 修复2：过滤掉空的、带注释的以及 YAML 的 payload 关键字
+        if not cleaned or cleaned.startswith('#') or cleaned.lower() == 'payload:': 
+            continue
+            
         if payload_type == "ipcidr":
             if is_valid_ip_or_cidr(cleaned):
                 merged.add(cleaned)
         else:
-            # 自动去掉 +. 前缀以提高编译兼容性
+            # 自动去掉 +. 前缀以提高编译兼容性 (按需取消注释)
             # cleaned = cleaned.lstrip('+.')
             merged.add(cleaned)
+            
     return merged
 
 def save_source(name, entries, ptype):
