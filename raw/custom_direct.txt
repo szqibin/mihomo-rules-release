@@ -8,8 +8,10 @@
 +.probasszone.com
 +.sstackle.com
 +.synology.com
++.tailc79eef.ts.net
 +.tailscale.com
 +.tailscale.io
++.tailscale.net
 +.wsfishing.com
 +.ycfishing.com
 +.ycyuju.com

@@ -1,5 +1,7 @@
++.agentclientprotocol.com
 +.ai.com
 +.ai.studio
++.aicode.googleapis.com
 +.aida.googleapis.com
 +.aiproxy.io
 +.aisandbox-pa.googleapis.com
@@ -45,6 +47,7 @@
 +.comfyregistry.org
 +.copilot.microsoft.com
 +.coze.com
++.crewai.com
 +.crixet.com
 +.cursor-cdn.com
 +.cursor.com
@@ -96,10 +99,12 @@
 +.kiro.dev
 +.labs.google
 +.labs.google.com
++.langchain.com
 +.launchdarkly.com
 +.leonardo.ai
 +.livekit.cloud
 +.liveperson.net
++.lmstudio.ai
 +.lovart.ai
 +.lpsnmedia.net
 +.makersuite.google.com
@@ -109,6 +114,7 @@
 +.meta.ai
 +.microsoft-copilot.com
 +.midjourney.com
++.minimax.io
 +.mistral.ai
 +.notebooklm.google
 +.notebooklm.google.com
@@ -116,6 +122,7 @@
 +.oaistatic.com
 +.oaiusercontent.com
 +.observeit.net
++.ollama.com
 +.opal.google
 +.opal.google.com
 +.openai.com
@@ -129,6 +136,7 @@
 +.pawan.krd
 +.perplexity.ai
 +.perplexity.com
++.plannotator.ai
 +.play.ht
 +.poe.com
 +.poecdn.net
