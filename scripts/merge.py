@@ -12,26 +12,9 @@ def is_valid_ip_or_cidr(entry):
     # 判断是否为合法的 IP 或 CIDR 格式
     return any(char.isdigit() for char in entry) and ('.' in entry or ':' in entry)
 
-# def process_content(content, payload_type):
-#     merged = set()
-#     # 提取内容，兼容 YAML 列表和纯文本行
-#     entries = re.findall(r"(?:^-\s*|payload:\s*-\s*|^\s*)(['\"]?)([^'\"\s#]+)\1", content, re.MULTILINE)
-#     for _, e in entries:
-#         cleaned = clean_entry(e)
-#         if not cleaned or cleaned.startswith('#'): continue
-#         if payload_type == "ipcidr":
-#             if is_valid_ip_or_cidr(cleaned):
-#                 merged.add(cleaned)
-#         else:
-#             # 自动去掉 +. 前缀以提高编译兼容性
-#             # cleaned = cleaned.lstrip('+.')
-#             merged.add(cleaned)
-#     return merged
-
 def process_content(content, payload_type):
     merged = set()
     
-    # 修复1：优化正则表达式
     # ^\s* : 匹配行首可能存在的缩进空格
     # (?:-\s+)?   : 匹配可能存在的 yaml 列表符 "- "（非捕获且设为可选）
     # (['\"]?)    : 捕获可能存在的单双引号 (Group 1)
@@ -42,7 +25,7 @@ def process_content(content, payload_type):
     for _, e in entries:
         cleaned = clean_entry(e)
         
-        # 修复2：过滤掉空的、带注释的以及 YAML 的 payload 关键字
+        # 过滤掉空的、带注释的以及 YAML 的 payload 关键字
         if not cleaned or cleaned.startswith('#') or cleaned.lower() == 'payload:': 
             continue
             
@@ -50,36 +33,56 @@ def process_content(content, payload_type):
             if is_valid_ip_or_cidr(cleaned):
                 merged.add(cleaned)
         else:
-            # 自动去掉 +. 前缀以提高编译兼容性 (按需取消注释)
-            # cleaned = cleaned.lstrip('+.')
             merged.add(cleaned)
             
     return merged
 
 def save_source(name, entries, ptype):
     if not entries: return
-    os.makedirs("source", exist_ok=True)
-    # 统一保存为 .list 格式供 Mihomo 编译
-    with open(f"source/{name}.list", "w", encoding='utf-8') as f:
-        for entry in sorted(list(entries)):
+    
+    # 创建 Mihomo 和 Sing-box 的源文件临时目录
+    os.makedirs("source/mihomo", exist_ok=True)
+    os.makedirs("source/sing-box", exist_ok=True)
+    
+    # 转换为列表并排序，保证每次生成的顺序一致
+    entry_list = sorted(list(entries))
+
+    # --- 1. 生成 Mihomo 源文件 (.list) ---
+    with open(f"source/mihomo/{name}.list", "w", encoding='utf-8') as f:
+        for entry in entry_list:
             f.write(f"{entry}\n")
-    # 保存类型标识
-    with open(f"source/{name}.type", "w", encoding='utf-8') as f:
+    with open(f"source/mihomo/{name}.type", "w", encoding='utf-8') as f:
         f.write(ptype)
+
+    # --- 2. 生成 Sing-box 源文件 (.json) ---
+    sbox_rule = {}
+    if ptype == "ipcidr":
+        sbox_rule["ip_cidr"] = entry_list
+    else:
+        # 将域名统一放入 domain_suffix，兼容通配行为
+        sbox_rule["domain_suffix"] = entry_list
+
+    # 构建 Sing-box Headless Rule 标准格式 (版本 2)
+    sbox_json = {
+        "version": 2,
+        "rules": [sbox_rule]
+    }
+
+    with open(f"source/sing-box/{name}.json", "w", encoding='utf-8') as f:
+        json.dump(sbox_json, f, indent=2, ensure_ascii=False)
 
 def main():
     if not os.path.exists('config.json'): return
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
 
-    # --- 流程 1：完全按照 config.json 规则输出 ---
+    # 处理 config.json
     print("Processing config.json categories...")
     for cat, settings in config.get('categories', {}).items():
         is_ip = any(x in cat.lower() for x in ['cidr', 'lan', 'ip'])
         payload_type = "ipcidr" if is_ip else "domain"
         merged_entries = set()
         
-        # 仅抓取远程
         for url in settings.get('remote_urls', []):
             try:
                 resp = requests.get(url, timeout=10)
@@ -87,7 +90,6 @@ def main():
                     merged_entries.update(process_content(resp.text, payload_type))
             except: pass
         
-        # 如果开启了 merge_local，则合并对应的本地文件
         if settings.get('merge_local', False):
             local_path = os.path.join("custom", f"{cat}.txt")
             if os.path.exists(local_path):
@@ -95,7 +97,7 @@ def main():
                     merged_entries.update(process_content(f.read(), payload_type))
         save_source(cat, merged_entries, payload_type)
 
-    # --- 流程 2：直接独立输出 custom 中的所有文件 (不受 config 影响) ---
+    # 处理 custom 独立文件
     print("Processing all local files in 'custom' folder independently...")
     if os.path.exists("custom"):
         for file in os.listdir("custom"):
@@ -104,7 +106,6 @@ def main():
                 is_ip = any(x in base_name.lower() for x in ['cidr', 'lan', 'ip'])
                 payload_type = "ipcidr" if is_ip else "domain"
                 
-                # 统一加上 custom_ 前缀独立输出
                 target_name = f"custom_{base_name}"
                 
                 with open(os.path.join("custom", file), "r", encoding='utf-8') as f:
