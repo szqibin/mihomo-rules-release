@@ -19386,9 +19386,6 @@
 +.sc-cdn.net
 +.sc.com
 +.sca-tolo.info
-+.scache.vzw.com
-+.scache1.vzw.com
-+.scache2.vzw.com
 +.scala-lang.org
 +.scala-sbt.org
 +.scaleflex.com
@@ -20277,6 +20274,7 @@
 +.softbankventuresasia.com
 +.softbankworld.com
 +.softether-download.com
++.softether.co.jp
 +.softether.org
 +.softfamous.com
 +.softmodels.net
@@ -20564,7 +20562,6 @@
 +.ss-link.com
 +.ss2.us
 +.ss7.app
-+.ss7.vzw.com
 +.ssdevrd.com
 +.ssglobal.co
 +.sshs.club
